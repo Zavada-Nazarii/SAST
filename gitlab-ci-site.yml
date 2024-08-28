@@ -1,0 +1,23 @@
+variables:
+   DOCKER_DRIVER: overlay2
+   SEMGREP_RULES: p/default 
+   SEMGREP_GITLAB_JSON: "1"
+
+stages:
+  - SomeProject
+
+  
+SomeProject:
+  rules:
+    - if: '$SOMEPROJECT == "true"'
+      when: always
+  stage: SomeProject
+  image: returntocorp/semgrep:edge
+
+
+  script: 
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab/SomeProject/searchService
+    - cd searchService
+    - semgrep ci --max-target-bytes="10000000" --gitlab-sast > gl-sast-report.json 
+    - apk add curl bash
+    - bash ./SomeProject/import_scan_result_searchService.sh ./gl-sast-report.json $DEFECT_DOJO_TOKEN

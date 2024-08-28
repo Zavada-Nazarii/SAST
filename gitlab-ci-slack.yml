@@ -1,0 +1,16 @@
+variables:
+   DOCKER_DRIVER: overlay2
+
+stages:
+  - SomeProject
+
+SomeProject:
+  rules:
+    - if: '$SOMEPROJECT == "true"'
+      when: always
+  stage: SomeProject
+  image: python:3.9-alpine
+  script: 
+    - pip install requests
+    - python3 ./SomeProject/SAST_Notification/SAST_Notification.py $DEFECT_DOJO_TOKEN $SEARCHSERVICE $SLACK_TOKEN search_tag_service
+

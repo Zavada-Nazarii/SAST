@@ -1,0 +1,35 @@
+variables:
+   DOCKER_DRIVER: overlay2
+   SHARED_PATH: /opt/shared
+
+stages:
+  - MobSF_code
+  
+MobSF_code:
+  rules:
+    - if: '$MOBSFCODE == "true"'
+      when: always
+  stage: MobSF_code
+  image: docker:latest
+
+  script:
+    - mkdir -p $SHARED_PATH  
+    - apk add curl bash jq zip python3 py3-pip
+    - >
+      curl -L --header "PRIVATE-TOKEN: $GIT_API_TOKEN" 
+      --output app.zip 
+      "${ARTIFACT_URL}"
+    - unzip ./app.zip -d $SHARED_PATH
+    - python3 -m venv /mob_env
+    - . /mob_env/bin/activate
+    - pip install requests
+    - python3 ./MobSF/download_and_analyze.py $AuthorizationMobSF $SHARED_PATH ios/build/Evo_app.ipa
+    - echo "Waiting for 15 minutes before triggering the MOBSFSLACK pipeline..."
+    - sleep 900  
+    - >
+      curl --request POST 
+      --form "token=$TRIGGER_TOKEN" 
+      --form "ref=master" 
+      --form "variables[MOBSFSLACK]=true" 
+      https://gitlab/api/v4/projects/0000/trigger/pipeline
+
